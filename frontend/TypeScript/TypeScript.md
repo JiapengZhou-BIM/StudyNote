@@ -1096,3 +1096,1117 @@ web.work() // 返回：'张三工作'
 
 
 
+## 泛型
+
+- 泛型：软件工程中，我们不仅要创建一致的定义良好的API，同时也要考虑可重用性。 组件不仅能够支持当前的数据类型，同时也能支持未来的数据类型，这在创建大型系统时为你提供了十分灵活的功能。
+- 在像 C# 和 Java 这样的语言中，可以使用泛型来创建可重用的组件，一个组件可以支持多种类型的数据。 这样用户就可以以自己的数据类型来使用组件。
+
+- 通俗理解：泛型就是解决 类 接口 方法的复用性、以及对不特定数据类型的支持(类型校验)
+
+### 泛型函数
+
+```typescript
+// T 表示泛型，具体什么类型是调用这个方法的时候决定的
+function getData<T>(value: T): T {
+  return value
+}
+
+console.log(getData<number>(123)) // 返回：123
+console.log(getData<string>('123')) // 返回：'123'
+
+```
+
+
+
+### 泛型类
+
+- 比如有个最小堆算法，需要同时支持返回数字和字符串 a  -  z两种类型。  通过类的泛型来实现
+
+```typescript
+class MinClas1<T> {
+  public list: T[] = []
+
+  add(value: T): void {
+    this.list.push(value)
+  }
+
+  min(): T {
+    var minNum = this.list[0]
+    for (var i = 0; i < this.list.length; i++) {
+      if (minNum > this.list[i]) {
+        minNum = this.list[i]
+      }
+    }
+    return minNum
+  }
+}
+
+var m1 = new MinClas1<number>() /*实例化类 并且制定了类的T代表的类型是number*/
+m1.add(11)
+m1.add(3)
+m1.add(2)
+alert(m1.min())
+var m2 = new MinClas1<string>() /*实例化类 并且制定了类的T代表的类型是string*/
+
+m2.add('c')
+m2.add('a')
+m2.add('v')
+alert(m2.min())
+
+```
+
+### 泛型接口
+
+- 方式一：
+
+```typescript
+interface ConfigFn {
+  <T>(value: T): T
+}
+
+var getData: ConfigFn = function <T>(value: T): T {
+  return value
+}
+
+console.log(getData<string>('张三')) // 返回：'张三'
+
+console.log(getData<number>(1234)) // 返回：1234
+
+```
+
+- 方式二：
+
+```typescript
+interface ConfigFn<T> {
+  (value: T): T
+}
+
+function getData<T>(value: T): T {
+  return value
+}
+
+var myGetData: ConfigFn<string> = getData
+
+console.log(myGetData('20')) // 返回：'20'
+
+// console.log(myGetData(20)) // 错误
+
+```
+
+
+
+### 把类作为参数类型的泛型类
+
+1、定义个类
+
+2、把类作为参数来约束数据传入的类型 
+
+
+
+- 未使用泛型类，当传入不同类的时候，需要多次写 MysqlDb 这个类中 add 方法
+
+```typescript
+// 定义一个User的类这个类的作用就是映射数据库字段
+// 然后定义一个 MysqlDb的类这个类用于操作数据库
+// 然后把User类作为参数传入到MysqlDb中
+
+class User {
+  username: string | undefined
+  pasword: string | undefined
+}
+
+class MysqlDb {
+  add(user: User): boolean {
+    console.log(user) // 返回：User 实例对象
+    return true
+  }
+}
+var u = new User()
+u.username = '张三'
+u.pasword = '123456'
+var Db = new MysqlDb()
+Db.add(u)
+
+```
+
+- 使用泛型类
+
+```typescript
+//定义操作数据库的泛型类
+class MysqlDb<T> {
+  add(info: T): boolean {
+    console.log(info)
+    return true
+  }
+  updated(info: T, id: number): boolean {
+    console.log(info)
+
+    console.log(id)
+
+    return true
+  }
+}
+
+//想给User表增加数据
+
+// 1、定义一个User类 和数据库进行映射
+
+class User {
+  username: string | undefined
+  pasword: string | undefined
+}
+var u = new User()
+u.username = '张三'
+u.pasword = '123456'
+var Db = new MysqlDb<User>()
+Db.add(u)
+
+//2、相关ArticleCate增加数据  定义一个ArticleCate类 和数据库进行映射
+
+class ArticleCate {
+  title: string | undefined
+  desc: string | undefined
+  status: number | undefined
+  constructor(params: {
+    title: string | undefined
+    desc: string | undefined
+    status?: number | undefined
+  }) {
+    this.title = params.title
+    this.desc = params.desc
+    this.status = params.status
+  }
+}
+//增加操作
+var a = new ArticleCate({
+  title: '分类',
+  desc: '1111',
+  status: 1,
+})
+
+//类当做参数的泛型类
+var Db1 = new MysqlDb<ArticleCate>()
+Db1.add(a)
+
+//修改数据
+var b = new ArticleCate({
+  title: '分类111',
+  desc: '2222',
+})
+
+b.status = 0
+var Db2 = new MysqlDb<ArticleCate>()
+Db2.updated(b, 12)
+
+```
+
+
+
+
+
+## 综合使用
+
+- 功能：定义一个操作数据库的库  支持 Mysql Mssql  MongoDb
+- 要求1：Mysql MsSql  MongoDb功能一样  都有 add  update  delete  get方法   
+- 注意：约束统一的规范、以及代码重用
+- 解决方案：需要约束规范所以要定义接口 ，需要代码重用所以用到泛型
+  - 接口：在面向对象的编程中，接口是一种规范的定义，它定义了行为和动作的规范
+  - 泛型 通俗理解：泛型就是解决 类 接口 方法的复用性
+
+```typescript
+/*
+
+功能：定义一个操作数据库的库  支持 Mysql Mssql  MongoDb
+
+要求1：Mysql MsSql  MongoDb功能一样  都有 add  update  delete  get方法    
+
+注意：约束统一的规范、以及代码重用
+
+解决方案：需要约束规范所以要定义接口 ，需要代码重用所以用到泛型
+
+    1、接口：在面向对象的编程中，接口是一种规范的定义，它定义了行为和动作的规范
+
+    2、泛型 通俗理解：泛型就是解决 类 接口 方法的复用性、
+
+
+*/
+
+interface DBI<T> {
+  add(info: T): boolean;
+  update(info: T, id: number): boolean;
+  delete(id: number): boolean;
+  get(id: number): any[];
+}
+
+//定义一个操作mysql数据库的类       注意：要实现泛型接口 这个类也应该是一个泛型类
+
+class MysqlDb<T> implements DBI<T> {
+  constructor() {
+    console.log("数据库建立连接");
+  }
+  add(info: T): boolean {
+    console.log(info);
+
+    return true;
+  }
+
+  update(info: T, id: number): boolean {
+    throw new Error("Method not implemented.");
+  }
+  delete(id: number): boolean {
+    throw new Error("Method not implemented.");
+  }
+  get(id: number): any[] {
+    var list = [
+      {
+        title: "xxxx",
+        desc: "xxxxxxxxxx",
+      },
+      {
+        title: "xxxx",
+        desc: "xxxxxxxxxx",
+      },
+    ];
+
+    return list;
+  }
+}
+
+//定义一个操作mssql数据库的类
+
+class MsSqlDb<T> implements DBI<T> {
+  constructor() {
+    console.log("数据库建立连接");
+  }
+  add(info: T): boolean {
+    console.log(info);
+    return true;
+  }
+  update(info: T, id: number): boolean {
+    throw new Error("Method not implemented.");
+  }
+  delete(id: number): boolean {
+    throw new Error("Method not implemented.");
+  }
+  get(id: number): any[] {
+    var list = [
+      {
+        title: "xxxx",
+        desc: "xxxxxxxxxx",
+      },
+      {
+        title: "xxxx",
+        desc: "xxxxxxxxxx",
+      },
+    ];
+
+    return list;
+  }
+}
+
+//操作用户表   定义一个User类和数据表做映射
+
+/*
+
+class User{
+    username:string | undefined;
+    password:string | undefined;
+}
+
+
+var u=new User();
+u.username='张三111';
+u.password='123456';
+
+
+var oMysql=new MysqlDb<User>(); //类作为参数来约束数据传入的类型 
+oMysql.add(u);
+
+*/
+
+class User {
+  username: string | undefined;
+  password: string | undefined;
+}
+
+var u = new User();
+u.username = "张三2222";
+u.password = "123456";
+
+var oMssql = new MsSqlDb<User>();
+oMssql.add(u);
+
+//获取User表 ID=4的数据
+var data = oMssql.get(4);
+console.log(data);
+
+```
+
+
+
+## 模块
+
+- 关于术语的一点说明： 请务必注意一点，TypeScript 1.5 里术语名已经发生了变化。 “内部模块”现在称做“命名空间”。 “外部模块”现在则简称为“模块” 模块在其自身的作用域里执行，而不是在全局作用域里；这意味着定义在一个模块里的变量，函数，类等等在模块外部是不可见的，除非你明确地使用 export 形式之一导出它们。 相反，如果想使用其它模块导出的变量，函数，类，接口等的时候，你必须要导入它们，可以使用 import 形式之一。
+- 我们可以把一些公共的功能单独抽离成一个文件作为一个模块。模块里面的变量 函数 类等默认是私有的，如果我们要在外部访问模块里面的数据（变量、函数、类），我们需要通过 export 暴露模块里面的数据（变量、函数、类...）。暴露后我们通过 import 引入模块就可以使用模块里面暴露的数据（变量、函数、类...）。
+
+### export 直接输出
+
+- 使用 export 直接暴露模块里面的数据
+
+```typescript
+// modules/db.ts
+var dbUrl = "xxxxxx";
+
+export function getData(): any[] {
+  console.log("获取数据库的数据111");
+
+  return [
+    {
+      title: "121312",
+    },
+    {
+      title: "121312",
+    },
+  ];
+}
+
+export function save() {
+  console.log("保存数据成功");
+}
+
+```
+
+
+
+- 使用 import…from 引入模块里面的暴露的数据，需解构
+
+```typescript
+// idnex.ts
+import { getData,save } from './modules/db';
+
+getData();
+
+save();
+```
+
+
+
+
+
+
+
+### 先定义再 export 输出
+
+- 暴露的第二种方式
+
+```typescript
+var dbUrl = "xxxxxx";
+
+function getData(): any[] {
+  console.log("获取数据库的数据111");
+
+  return [
+    {
+      title: "121312",
+    },
+    {
+      title: "121312",
+    },
+  ];
+}
+
+function save() {
+  console.log("保存数据成功");
+}
+
+export { dbUrl, getData, save };
+
+```
+
+
+
+- 使用 import…from 引入模块里面的暴露的数据，需解构
+
+```typescript
+// idnex.ts
+import { getData,save } from './modules/db';
+
+getData();
+
+save();
+```
+
+
+
+### 导入取别名
+
+```typescript
+// idnex.ts
+import { dbUrl, getData as get, save } from "./modules/db";
+
+console.log(dbUrl);
+
+get();
+```
+
+
+
+### export default 默认导出
+
+- export default 用于规定模块的默认对外接口
+- 很显然默认对外接口只能有一个，所以 export default 在同一个模块中只能出现一次
+- export default只能直接输出，不能先定义再输出。
+- 其在 import 方式上也和 export 存在一定区别
+
+
+
+- 当导出单个函数或变量的时候
+
+```typescript
+// /modules/db.ts
+function getData(): any[] {
+  console.log("获取数据库的数据111");
+
+  return [
+    {
+      title: "121312",
+    },
+    {
+      title: "121312",
+    },
+  ];
+}
+
+export default getData;
+
+```
+
+
+
+- 使用 import…from 引入模块里面的暴露的数据，直接导入，无需解构
+
+```typescript
+// idnex.ts
+import getData from "./modules/db";
+getData();
+
+```
+
+
+
+- 当以对象形式导出的时候
+
+```typescript
+var dbUrl = "xxxxxx";
+
+function getData(): any[] {
+  console.log("获取数据库的数据111");
+
+  return [
+    {
+      title: "121312",
+    },
+    {
+      title: "121312",
+    },
+  ];
+}
+
+function save() {
+  console.log("保存数据成功");
+}
+
+export default { dbUrl, getData, save };
+
+```
+
+
+
+- 使用 import…from 引入模块里面的暴露的数据，导入使用对象接收，使用则使用对象的属性或者方法
+
+```typescript
+// idnex.ts
+import db from "./modules/db";
+console.log(db.dbUrl);
+
+db.getData();
+```
+
+
+
+### 使用模块封装数据库类
+
+- 定义数据库类
+
+```typescript
+interface DBI<T> {
+  add(info: T): boolean;
+  update(info: T, id: number): boolean;
+  delete(id: number): boolean;
+  get(id: number): any[];
+}
+
+//定义一个操作mysql数据库的类       注意：要实现泛型接口 这个类也应该是一个泛型类
+
+export class MysqlDb<T> implements DBI<T> {
+  constructor() {
+    console.log("数据库建立连接");
+  }
+  add(info: T): boolean {
+    console.log(info);
+
+    return true;
+  }
+
+  update(info: T, id: number): boolean {
+    throw new Error("Method not implemented.");
+  }
+  delete(id: number): boolean {
+    throw new Error("Method not implemented.");
+  }
+  get(id: number): any[] {
+    var list = [
+      {
+        title: "xxxx",
+        desc: "xxxxxxxxxx",
+      },
+      {
+        title: "xxxx",
+        desc: "xxxxxxxxxx",
+      },
+    ];
+
+    return list;
+  }
+}
+
+//定义一个操作mssql数据库的类
+
+export class MsSqlDb<T> implements DBI<T> {
+  constructor() {
+    console.log("数据库建立连接");
+  }
+  add(info: T): boolean {
+    console.log(info);
+    return true;
+  }
+  update(info: T, id: number): boolean {
+    throw new Error("Method not implemented.");
+  }
+  delete(id: number): boolean {
+    throw new Error("Method not implemented.");
+  }
+  get(id: number): any[] {
+    var list = [
+      {
+        title: "xxxx",
+        desc: "xxxxxxxxxx",
+      },
+      {
+        title: "xxxx",
+        desc: "xxxxxxxxxx",
+      },
+    ];
+
+    return list;
+  }
+}
+
+```
+
+
+
+- 定义数据模型
+
+```typescript
+// /model/user.ts
+import { MsSqlDb } from "../modules/db";
+
+//定义数据库的映射
+class UserClass {
+  username: string | undefined;
+  password: string | undefined;
+}
+
+var UserModel = new MsSqlDb<UserClass>();
+export { UserClass, UserModel };
+
+```
+
+- 使用
+
+```typescript
+// /index.ts
+import {UserClass,UserModel} from './model/user';
+
+//增加数据
+var u=new UserClass();
+u.username='张三';
+u.password='12345655654757';
+UserModel.add(u);
+//获取user表数据
+var res=UserModel.get(123);
+console.log(res);
+
+```
+
+
+
+## 命名空间
+
+- 在代码量较大的情况下，为了避免各种变量命名相冲突，可将相似功能的函数、类、接口等放置到命名空间内同 Java 的包、.Net的命名空间一样，TypeScrip 的命名空间可以将代码包裹起来，只对外暴露需要在外部访问的对象。命名空间内的对象通过 export 关键字对外暴露。
+
+- 命名空间和模块的区别：
+  - 命名空间：内部模块，主要用于组织代码，避免命名冲突。
+  - 模块：ts 的外部模块的简称，侧重代码的复用，一个模块里可能会有多个命名空间。
+
+### 内部使用
+
+```typescript
+namespace A {
+  interface Animal {
+    name: string;
+    eat(): void;
+  }
+  export class Dog implements Animal {
+    name: string;
+    constructor(theName: string) {
+      this.name = theName;
+    }
+
+    eat() {
+      console.log(`${this.name} 在吃狗粮。`);
+    }
+  }
+
+  export class Cat implements Animal {
+    name: string;
+    constructor(theName: string) {
+      this.name = theName;
+    }
+
+    eat() {
+      console.log(`${this.name} 吃猫粮。`);
+    }
+  }
+}
+
+namespace B {
+  interface Animal {
+    name: string;
+    eat(): void;
+  }
+  export class Dog implements Animal {
+    name: string;
+    constructor(theName: string) {
+      this.name = theName;
+    }
+
+    eat() {
+      console.log(`${this.name} 在吃狗粮。`);
+    }
+  }
+
+  export class Cat implements Animal {
+    name: string;
+    constructor(theName: string) {
+      this.name = theName;
+    }
+
+    eat() {
+      console.log(`${this.name} 在吃猫粮。`);
+    }
+  }
+}
+// 命名空间外使用，需要使用 命名空间.类名 使用
+var c = new B.Cat("小花");
+
+c.eat();
+
+```
+
+### 外部使用
+
+```typescript
+// /module/animal.ts
+export namespace A {
+  interface Animal {
+    name: string;
+    eat(): void;
+  }
+  export class Dog implements Animal {
+    name: string;
+    constructor(theName: string) {
+      this.name = theName;
+    }
+
+    eat() {
+      console.log(`${this.name} 在吃狗粮。`);
+    }
+  }
+
+  export class Cat implements Animal {
+    name: string;
+    constructor(theName: string) {
+      this.name = theName;
+    }
+
+    eat() {
+      console.log(`${this.name} 吃猫粮。`);
+    }
+  }
+}
+
+export namespace B {
+  interface Animal {
+    name: string;
+    eat(): void;
+  }
+  export class Dog implements Animal {
+    name: string;
+    constructor(theName: string) {
+      this.name = theName;
+    }
+
+    eat() {
+      console.log(`${this.name} 在吃狗粮。`);
+    }
+  }
+
+  export class Cat implements Animal {
+    name: string;
+    constructor(theName: string) {
+      this.name = theName;
+    }
+
+    eat() {
+      console.log(`${this.name} 在吃猫粮。`);
+    }
+  }
+}
+
+```
+
+
+
+```typescript
+// /index.ts
+import { A, B } from "./modules/animal";
+
+var d = new A.Dog("小黑");
+d.eat();
+
+var dog = new B.Dog("小花");
+dog.eat();
+```
+
+
+
+
+
+## 装饰器
+
+- 装饰器是一种特殊类型的声明，它能够被附加到类声明，方法，属性或参数上，可以修改类的行为。
+- 通俗的讲装饰器就是一个方法，可以注入到类、方法、属性参数上来扩展类、属性、方法、参数的功能。
+- 常见的装饰器有：类装饰器、属性装饰器、方法装饰器、参数装饰器
+- 装饰器的写法：普通装饰器（无法传参） 、装饰器工厂（可传参）
+- 装饰器是过去几年中 js 最大的成就之一，已是 Es7 的标准特性之一
+
+
+
+### 类装饰器
+
+- 类装饰器在类声明之前被声明（紧靠着类声明）。类装饰器应用于类构造函数，可以用来监视，修改或替换类定义或者传入一个参数
+- 普通装饰器（无法传参）
+
+```typescript
+function logClass(params: any) {
+  console.log(params);
+  // params 就是当前类
+  params.prototype.apiUrl = "动态扩展的属性";
+  params.prototype.run = function () {
+    console.log("我是一个run方法");
+  };
+}
+
+// 使用 @方法 表示添加一个类装饰器来拓展类
+@logClass
+class HttpClient {
+  constructor() {}
+  getData() {}
+}
+var http: any = new HttpClient();
+console.log(http.apiUrl); // 返回：动态扩展的属性
+http.run(); // 返回：我是一个run方法
+
+```
+
+
+
+- 装饰器工厂（可传参）
+
+```typescript
+function logClass(params: string) {
+  return function (target: any) {
+    // 类 当前类
+    console.log(target);
+    // params 传入的参数
+    console.log(params);
+    target.prototype.apiUrl = params;
+  };
+}
+
+@logClass("hello")
+class HttpClient {
+  constructor() {}
+
+  getData() {}
+}
+
+var http: any = new HttpClient();
+console.log(http.apiUrl); // 返回：'hello'
+
+```
+
+
+
+- 可以用来重载构造函数
+- 类装饰器表达式会在运行时当作函数被调用，类的构造函数作为其唯一的参数。
+- 如果类装饰器返回一个值，它会使用提供的构造函数来替换类的声明。
+
+```typescript
+function logClass(target: any) {
+  console.log(target);
+  // 类似利用继承，重写类
+  return class extends target {
+    apiUrl: any = "我是修改后的数据";
+    getData() {
+      this.apiUrl = this.apiUrl + "----";
+      console.log(this.apiUrl);
+    }
+  };
+}
+
+@logClass
+class HttpClient {
+  public apiUrl: string | undefined;
+  constructor() {
+    this.apiUrl = "我是构造函数里面的apiUrl";
+  }
+  getData() {
+    console.log(this.apiUrl);
+  }
+}
+
+var http = new HttpClient();
+http.getData(); // 返回：'我是修改后的数据----'
+
+```
+
+
+
+### 属性装饰器
+
+- 属性装饰器表达式会在运行时当作函数被调用，传入下列2个参数：
+
+  1. 对于静态成员来说是类的构造函数，对于实例成员是类的原型对象。
+
+  2. 成员的名字。
+
+```typescript
+//属性装饰器
+function logProperty(params: any) {
+  return function (target: any, attr: any) {
+    console.log(target);
+    console.log(attr);
+    target[attr] = params;
+  };
+}
+
+class HttpClient {
+  @logProperty("http://itying.com")
+  public url: any | undefined;
+  constructor() {}
+  getData() {
+    console.log(this.url);
+  }
+}
+var http = new HttpClient();
+http.getData();
+```
+
+
+
+### 方法装饰器
+
+- 它会被应用到方法的 属性描述符上，可以用来监视，修改或者替换方法定义。
+- 方法装饰会在运行时传入下列3个参数：
+  1. 对于静态成员来说是类的构造函数，对于实例成员是类的原型对象。
+  2. 成员的名字。
+  3. 成员的属性描述符。
+- 可以用来拓展类的属性和方法
+
+```typescript
+//方法装饰器一
+
+function get(params: any) {
+  return function (target: any, methodName: any, desc: any) {
+    console.log(target);
+    console.log(methodName);
+    console.log(desc);
+    // 拓展类的属性
+    target.apiUrl = "xxxx";
+    // 拓展类的方法
+    target.run = function () {
+      console.log("run");
+    };
+  };
+}
+
+class HttpClient {
+  public url: any | undefined;
+  constructor() {}
+  @get("http://www.itying,com")
+  getData() {
+    console.log(this.url);
+  }
+}
+
+var http: any = new HttpClient();
+console.log(http.apiUrl); // 返回：'xxxx'
+http.run(); // 返回：'run'
+
+```
+
+- 覆盖原来的方法
+
+```typescript
+function get(params: any) {
+  return function (target: any, methodName: any, desc: any) {
+    console.log(target);
+    console.log(methodName);
+    // 这个打印的就是方法的内容
+    console.log(desc.value);
+
+    //修改装饰器的方法  把装饰器方法里面传入的所有参数改为string类型
+
+    //1、保存当前的方法
+    // 覆盖原来的方法
+    desc.value = function (...args: any[]) {
+      args = args.map((value) => {
+        return String(value);
+      });
+    };
+  };
+}
+
+class HttpClient {
+  public url: any | undefined;
+  constructor() {}
+  @get("http://www.itying,com")
+  getData(...args: any[]) {
+    console.log(args);
+    console.log("我是getData里面的方法");
+  }
+}
+
+var http = new HttpClient();
+http.getData(123, "xxx");
+
+```
+
+- 拓展原来的方法
+
+```typescript
+function get(params: any) {
+  return function (target: any, methodName: any, desc: any) {
+    console.log(target);
+    console.log(methodName);
+    // 这个打印的就是方法的内容
+    console.log(desc.value);
+
+    //修改装饰器的方法  把装饰器方法里面传入的所有参数改为string类型
+
+    //1、保存当前的方法
+	// 拓展方法，先执行装饰器中的内容
+    var oMethod = desc.value;
+    desc.value = function (...args: any[]) {
+      args = args.map((value) => {
+        return String(value);
+      });
+      oMethod.apply(this, args);
+    };
+  };
+}
+
+class HttpClient {
+  public url: any | undefined;
+  constructor() {}
+  @get("http://www.itying,com")
+  getData(...args: any[]) {
+    console.log(args);
+    console.log("我是getData里面的方法");
+  }
+}
+
+var http = new HttpClient();
+http.getData(123, "xxx");
+
+```
+
+
+
+### 方法参数装饰器
+
+- 参数装饰器表达式会在运行时当作函数被调用，可以使用参数装饰器为类的原型增加一些元素数据 ，传入下列3个参数：
+  1. 对于静态成员来说是类的构造函数，对于实例成员是类的原型对象。
+  2. 方法的名字。
+  3. 参数在函数参数列表中的索引。
+
+- 用的比较少，功能可以被类装饰器替代
+
+```typescript
+function logParams(params: any) {
+  return function (target: any, methodName: any, paramsIndex: any) {
+    console.log(params);
+
+    console.log(target);
+
+    console.log(methodName);
+
+    console.log(paramsIndex);
+
+    target.apiUrl = params;
+  };
+}
+
+class HttpClient {
+  public url: any | undefined;
+  constructor() {}
+  getData(@logParams("xxxxx") uuid: any) {
+    console.log(uuid);
+  }
+}
+
+var http: any = new HttpClient();
+http.getData(123456);
+console.log(http.apiUrl);
+
+```
+
+
+
+### 执行顺序
+
+- 装饰器执行顺序
+  - 非类修饰器（按照代码书写顺序：从上到下，从左到右）> 类修饰器。
+  - 属性和方法没有区别，看代码写的先后顺序，参数装饰器也是。而且同一个方法中的有多个参数使用，则从左往右，同一个参数上有多个也是从左往右
+
+
+
+
+
+
+
+
+
